@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <script type="text/javascript" src="javascript/jquery.js"></script>
+    <link rel="icon" type="../image/png" sizes="25x17" href="images/logo16x16.png">
+    <link rel="manifest" href="/manifest.json">
+    <title>Swagger Creator</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+    <link href="https://fonts.googleapis.com/css?family=Montserrat" rel="stylesheet" type="text/css">
+    <link href="https://fonts.googleapis.com/css?family=Lato" rel="stylesheet" type="text/css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    <script type="text/javascript" src="javascript/scriptpagina.js"></script>
+    <script type="text/javascript" src="javascript/jquery.maskedinput.js"></script>
+    <link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css" type="text/css">
+</head>
+
+<body id="home" data-spy="scroll" data-target=".navbar" data-offset="60">
+    <div id="loading">
+        <img id="loading-image" src="images/hug.gif" alt="Loading..." />
+    </div>
+    <div class="modal fade" id="myModal" role="dialog">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                    <h4 class="modal-title" id="tituloModal"></h4>
+                </div>
+                <div class="modal-body" id="textoModal">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="jumbotron">
+        <div class="interna" style="background-color: #dddddd;" align="justify">
+            <div id="contact" class="container-fluid bg-grey">
+                <div class="row">
+                    <div class="row">
+                        <div class="col-sm-12">
+                            <h2 style="text-align: center;">
+                                Monte seu swagger
+                            </h2>
+                            <hr>
+                            <br>
+                        </div>
+                    </div>
+                </div>
+                <div class="row" id="espacoInicio">
+                    <div class="row">
+                        <div class="col-sm-12">
+                            <h3>
+                                Projeto em fase de desenvolvimento que tem como objetivo criar um arquivo html de swagger dado um arquivo de exportação de projeto do postman.
+                                <br>
+                                <br>
+                                Instruções:
+                                <ol>
+                                    <li>
+                                        No postman vá no seu projeto e vá em <b>Export</b>
+                                    </li>
+                                    <li>
+                                        Anexe esse arquivo logo abaixo
+                                    </li>
+                                    <li>
+                                        Depois de confirmado, será baixado um arquivo html, basta abrir em seu navegador e pronto, funcionando
+                                    </li>
+                                </ol>
+                                <br>
+                                <br>
+                                Observação: Como provavelmente abrirá o arquivo no navegador na sua máquina, às vezes pode ocorrer erro ao enviar uma requisição no swagger. Caso aconteça tente abrir em um servidor ou em outro navegador.
+                            </h3>
+                            <hr>
+                            <br>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="col-sm-12">
+                            <div class="row">
+                                <div class="col-sm-12 form-group" id="game">
+                                    <h4 style="text-align: center;">
+                                        <input class="form-control" type="file" id="fileAnexo" name="fileAnexo">
+                                        <br>
+                                        <button class="buttonStartGame" onclick="Enviar()">Enviar</button>
+                                    </h4>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <footer class="bg-grey" style="text-align: center;">
+        SunSale System
+    </footer>
+    </div>
+</body>
+
+</html>
+
+<script>
+    document.getElementById('fileAnexo').addEventListener('input', getDataURLResposta, false);
+
+    anexo = '';
+    removeLoader();
+
+    function getDataURLResposta(number) {
+        var feito = false;
+        var reader = new FileReader();
+        openLoader();
+
+        reader.onload = function () {
+            anexo = reader.result;
+            removeLoader();
+        };
+        reader.onerror = function (error) {
+            alert('Error: ', error);
+            removeLoader();
+        };
+    
+        var files = document.getElementById('fileAnexo').files;
+        reader.readAsDataURL(files[files.length-1]);
+        
+    }
+
+    function downloadURI(uri, name) {
+        var link = document.createElement("a");
+        link.download = name;
+        link.href = uri;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        delete link;
+    }
+
+    function Enviar(){
+        openLoader();
+
+        var xhr = new XMLHttpRequest();
+        var file = anexo;        
+        var dados = JSON.stringify({file});
+        console.log(dados);
+
+        xhr.open("POST", "http://swaggercreator.sunsalesystem.com.br/PHP/GetSwaggerFile.php");
+        xhr.setRequestHeader('Content-Type', 'application/json');
+
+        xhr.addEventListener("load", function() {
+            if (xhr.status == 200) {
+                if(JSON.parse(xhr.response).Sucesso){
+                    downloadURI(JSON.parse(xhr.response).Swagger.Arquivo, 'index.html');
+                }
+                else{
+                    alerta(JSON.parse(xhr.response).Mensagem);
+                }
+            } else {
+                alerta('Não foi possível inserir');
+            }
+            removeLoader();
+            location.reload();
+        }
+        );
+
+        xhr.send(dados);
+    }
+
+    function alerta(mensagem) {
+        AbrirModal("Alerta", mensagem);
+    }
+
+    function informa(mensagem) {
+        AbrirModal("Informação", mensagem);
+    }
+
+    function AbrirModal(tituloModal, textoModal) {
+        var titulo = document.querySelector('#tituloModal');
+        var texto = document.querySelector('#textoModal');
+
+        titulo.innerHTML = '';
+        titulo.innerHTML = tituloModal;
+        texto.innerHTML = '';
+        texto.innerHTML = '<p>' + textoModal + '</p>';
+
+        $("#myModal").modal();
+    }
+
+    function removeLoader(){
+        $( "#loading" ).fadeOut(500, function() {
+            document.getElementById('loading').hidden = true;
+        });  
+    }
+
+    function openLoader(){
+        document.getElementById('loading').style["display"] = "";
+        pollVisibility();
+    }
+
+    const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
+    async function pollVisibility() {
+        try {
+            if (document.getElementById("loading").style.display == '') {
+                return null;
+            } else {
+                return await delay(100).then(pollVisibility);
+            }
+        } catch (e) {
+            console.log(e)
+        }
+    }
+
+</script>
