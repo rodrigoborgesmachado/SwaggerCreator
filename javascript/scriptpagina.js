@@ -36,104 +36,105 @@ $(document).ready(function () {
         });
     });
 })
+function getDataURLResposta(number) {
+    var feito = false;
+    var reader = new FileReader();
+    openLoader();
 
-function CriarPalavras(){
-    var lista = new Array();
+    reader.onload = function () {
+        anexo = reader.result;
+        removeLoader();
+    };
+    reader.onerror = function (error) {
+        alert('Error: ', error);
+        removeLoader();
+    };
+
+    var files = document.getElementById('fileAnexo').files;
+    reader.readAsDataURL(files[files.length-1]);
     
-    var xhr = new XMLHttpRequest();
-    xhr.open("GET", "http://soletrando.sunsalesystem.com.br/PHP/GetPalavras.php", false);
-    xhr.send(null);
-
-    if(xhr.status === 200){
-        var json = JSON.parse(xhr.responseText);
-        for(var i=0; i < json.lista.length;i++)
-        {
-            lista.push(json.lista[i].Palavra);
-        }
-    }
-    else{
-        lista = new Array();
-    }
-    
-    return lista;
-};
-
-function DizerPalavra(palavra){
-    let speech = new SpeechSynthesisUtterance();
-    speech.lang = "pt";
-    speech.voice = window.speechSynthesis.getVoices()[15];
-    speech.volume = 1;
-    speech.rate = 1;
-    speech.pitch = 1;
-    speech.text = palavra;
-    window.speechSynthesis.speak(speech);
 }
 
-function EnviarRequisicaoPOST(nome, numeroAcertos){
+function downloadURI(uri, name) {
+    var link = document.createElement("a");
+    link.download = name;
+    link.href = uri;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    delete link;
+}
+
+function Enviar(){
+    openLoader();
+
     var xhr = new XMLHttpRequest();
+    var file = anexo;        
+    var dados = JSON.stringify({file});
+    console.log(dados);
 
-    var dados = JSON.stringify({nome, numeroAcertos});
-
-    xhr.open("POST", "http://soletrando.sunsalesystem.com.br/PHP/InsereRanking.php");
+    xhr.open("POST", "http://swaggercreator.sunsalesystem.com.br/PHP/GetSwaggerFile.php");
     xhr.setRequestHeader('Content-Type', 'application/json');
 
     xhr.addEventListener("load", function() {
-        var erroAjax = document.querySelector("#erro-ajax");
         if (xhr.status == 200) {
-            //sucesso!
+            if(JSON.parse(xhr.response).Sucesso){
+                downloadURI(JSON.parse(xhr.response).Swagger.Arquivo, 'index.html');
+            }
+            else{
+                alerta(JSON.parse(xhr.response).Mensagem);
+            }
         } else {
-            alert('Não foi possível inserir seu jogo :(! Ele não será apresentado no ranking');
-            //erro!
+            alerta('Não foi possível inserir');
         }
+        removeLoader();
+        location.reload();
     }
     );
 
     xhr.send(dados);
 }
 
-function BuscaLista(){
-    var xhr = new XMLHttpRequest();
-    xhr.open("GET", "http://soletrando.sunsalesystem.com.br/PHP/GetRanking.php", false);
-    xhr.send(null);
-
-    if(xhr.status === 200){
-        return JSON.parse(xhr.responseText);
-    }
-    else{
-        return null;
-    }
+function alerta(mensagem) {
+    AbrirModal("Alerta", mensagem);
 }
 
-//teste
+function informa(mensagem) {
+    AbrirModal("Informação", mensagem);
+}
 
-const listaImagens = ['images/1.jpeg',
-                      'images/2.jpeg',
-                      'images/3.jpeg',
-                      'images/4.jpeg',
-                      'images/5.jpeg',
-                      'images/6.jpeg',
-                      'images/7.jpeg',
-                      'images/8.jpeg',
-                      'images/9.jpeg',
-                      'images/10.jpeg',
-                      'images/11.jpeg',
-                      'images/12.jpeg',
-                      'images/13.jpeg',
-                      'images/14.jpeg',
-                      'images/15.jpeg',
-                      'images/16.jpeg',
-                      'images/17.jpeg',
-                      'images/18.jpeg',
-                      'images/19.jpeg',
-                      'images/20.jpeg',
-                      'images/21.jpeg',
-                      'images/22.jpeg',
-                      'images/23.jpeg',
-                      'images/24.jpeg',
-                      'images/25.jpeg',
-                      'images/26.jpeg',
-                      'images/27.jpeg',
-                      'images/28.jpeg',
-                      'images/29.jpeg',
-                      'images/30.jpeg',
-                    ];
+function AbrirModal(tituloModal, textoModal) {
+    var titulo = document.querySelector('#tituloModal');
+    var texto = document.querySelector('#textoModal');
+
+    titulo.innerHTML = '';
+    titulo.innerHTML = tituloModal;
+    texto.innerHTML = '';
+    texto.innerHTML = '<p>' + textoModal + '</p>';
+
+    $("#myModal").modal();
+}
+
+function removeLoader(){
+    $( "#loading" ).fadeOut(500, function() {
+        document.getElementById('loading').hidden = true;
+    });  
+}
+
+function openLoader(){
+    document.getElementById('loading').style["display"] = "";
+    pollVisibility();
+}
+
+const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
+async function pollVisibility() {
+    try {
+        if (document.getElementById("loading").style.display == '') {
+            return null;
+        } else {
+            return await delay(100).then(pollVisibility);
+        }
+    } catch (e) {
+        console.log(e)
+    }
+}
